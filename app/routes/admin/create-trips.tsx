@@ -2,11 +2,12 @@ import { ComboBoxComponent } from "@syncfusion/ej2-react-dropdowns";
 import Header from "components/Header"
 import type { Route } from "./+types/create-trips";
 import { comboBoxItems, selectItems } from "~/constants";
-import { formatKey } from "lib/utils";
+import { cn, formatKey } from "lib/utils";
 import { LayerDirective, LayersDirective, MapsComponent } from "@syncfusion/ej2-react-maps";
 import { useState } from "react";
 import { world_map } from "~/constants/world_map";
 import { ButtonComponent } from "@syncfusion/ej2-react-buttons";
+import { account } from "~/appwrite/client";
 
 export const loader = async () => {
     const response = await fetch('https://restcountries.com/v3.1/all?fields=name,latlng,flag,maps');
@@ -37,6 +38,39 @@ const CreateTrips = ({loaderData}: Route.ComponentProps) => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setLoading(true);
+
+        if(
+        !formData.country ||
+        !formData.travelStyle ||
+        !formData.interest ||
+        !formData.budget ||
+        !formData.groupType
+        ) {
+            setError('Please provide values for all fields');
+            setLoading(false)
+            return;
+        }
+
+        if(formData.duration < 1 || formData.duration > 14 ) {
+            setError('Duration must be between 1 and 14 days');
+            setLoading(false)
+            return;
+        }
+        const user = await account.get();
+        if(!user.$id) {
+            console.error('User not authenticated');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            console.log('user', user);
+            console.log('formData', formData);
+        } catch(e) {
+            console.error('Error of generating a trip', e);
+        } finally {
+            setLoading(false)
+        }
     };
     const handleChange = (key: keyof TripFormData, value: string | number) => {
         setFormData({...formData, [key]: value})
@@ -161,7 +195,7 @@ const CreateTrips = ({loaderData}: Route.ComponentProps) => {
                             className = "button-class !h-12 !w-full"
                             disabled = {loading}
                         >
-                            <img src = {`/assets/icons/${loading ? 'loader.svg' : 'magic-star.svg'}`}/>
+                            <img src = {`/assets/icons/${loading ? 'loader.svg' : 'magic-star.svg'}`} className = {cn("size-5", {'animate-spin': loading})} />
                             <span className = "p-16-semibold text-white">
                                 {loading ? 'Generating...' : 'Generate Trip'}
                             </span>
