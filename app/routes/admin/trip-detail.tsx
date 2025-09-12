@@ -4,19 +4,20 @@ import type { LoaderFunctionArgs } from 'react-router'
 import { getAllTrips, getTripById } from '~/appwrite/trips';
 import type { Route } from './+types/trip-detail';
 import { cn, getFirstWord, parseTripData } from 'lib/utils';
-import { Header, InfoPill } from 'components';
+import { Header, InfoPill, TripCard } from 'components';
 import { ChipDirective, ChipListComponent, ChipsDirective } from '@syncfusion/ej2-react-buttons';
+import Trips from './trips';
 
 export const loader = async({params}: LoaderFunctionArgs) => {
     const { tripId } = params;
    
     if(!tripId) throw new Error('Trip id is required');
-    const trip = await getTripById(tripId);
-    const trips = await getAllTrips(4,0);
-    // const [trip, trips] = await Promise.allc([
-    //     getTripById(tripId),
-    //     getAllTrips(4, 0)
-    // ]);
+
+    const [trip, trips] = await Promise.all([
+        getTripById(tripId),
+        getAllTrips(4,0)
+    ]);
+
     return {
         trip,
         allTrips: trips.allTrips.map(({ $id, tripDetails, imageUrls }) => ({
@@ -159,12 +160,28 @@ const TripDetail = ({ loaderData }: Route.ComponentProps) => {
                                     </li>
                                 ))}
                             </ul>
-                            <section className = "flex flex-col gap-6">
-                                <h2 className = "p-24-semibold text-dark-100">Popular trips</h2>
-                            </section>
                         </div>
                     </section>
+                    
                 ))}
+
+            </section>
+            <section className="flex flex-col gap-6">
+                <h2 className="p-24-semibold text-dark-100">Popular Trips</h2>
+
+                <div className="trip-grid">
+                    {allTrips.map((trip) => (
+                        <TripCard
+                            key={trip.id}
+                            id={trip.id}
+                            name={trip.name}
+                            imageUrl={trip.imageUrls[0]}
+                            location={trip.itinerary?.[0]?.location ?? ""}
+                            tags={[trip.interests, trip.travelStyle]}
+                            price={trip.estimatedPrice}
+                        />
+                    ))}
+                </div>
             </section>
         </main>
     )
